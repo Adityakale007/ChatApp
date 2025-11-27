@@ -1,0 +1,730 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Discord-Style Chat</title>
+
+  <style>
+    :root {
+  --bg-main: #202225;
+  --bg-panel: #2f3136;
+  --bg-chat: #36393f;
+  --accent: #5865f2;
+  --accent-hover: #4752c4;
+  --text-primary: #ffffff;
+  --text-secondary: #b9bbbe;
+  --border-subtle: #2a2c31;
+  --input-bg: #40444b;
+  --shadow-panel: rgba(0, 0, 0, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-main);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--text-primary);
+}
+
+/* AUTH SCREEN */
+.auth-container {
+  width: 380px;
+  background: var(--bg-panel);
+  border-radius: 12px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0 10px 25px var(--shadow-panel);
+  border: 1px solid var(--border-subtle);
+}
+
+.auth-container h2 {
+  margin: 0 0 10px;
+  text-align: center;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.auth-container input {
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  outline: none;
+  font-size: 14px;
+  transition: border 0.2s ease;
+}
+
+.auth-container input:focus {
+  border-color: var(--accent);
+}
+
+.auth-container input::placeholder {
+  color: var(--text-secondary);
+}
+
+.auth-container button {
+  padding: 12px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+
+.auth-container button:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+}
+
+.auth-switch {
+  text-align: center;
+  margin-top: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--accent);
+  user-select: none;
+  transition: color 0.2s ease;
+}
+
+.auth-switch:hover {
+  color: var(--accent-hover);
+}
+
+/* MAIN CHAT LAYOUT */
+.container {
+  width: 95%;
+  max-width: 1200px;
+  height: 90vh;
+  background: var(--bg-panel);
+  border-radius: 12px;
+  display: none;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 12px 30px var(--shadow-panel);
+}
+
+/* Sidebar */
+.sidebar {
+  width: 280px;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header {
+  padding: 16px 20px;
+  font-size: 16px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.room-input {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.room-input input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+}
+
+.room-input input:focus {
+  border-color: var(--accent);
+}
+
+.room-input button {
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.room-input button:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+#userList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  overflow-y: auto;
+  flex: 1;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+#userList li {
+  padding: 10px 16px;
+  border-radius: 6px;
+  margin: 4px 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#userList li:hover {
+  background: #393c43;
+  color: var(--text-primary);
+}
+
+#userList li.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Chat panel */
+.chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-chat);
+}
+
+.chat-header {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-header::before {
+  content: "#";
+  color: var(--text-secondary);
+}
+
+/* Call controls */
+.call-controls {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.call-controls button {
+  padding: 6px 12px;
+  font-size: 13px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+
+#startCallBtn {
+  background: var(--accent);
+  color: white;
+}
+
+#startCallBtn:hover {
+  background: var(--accent-hover);
+}
+
+#endCallBtn {
+  background: #d83c3e;
+  color: white;
+}
+
+#endCallBtn:hover {
+  background: #b53234;
+}
+
+/* Video area */
+#videoArea {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #2c2f33;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+#videoArea video {
+  width: 50%;
+  border-radius: 12px;
+  background: #000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Messages */
+#messages {
+  flex: 1;
+  padding: 18px 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg-chat);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.bubble {
+  max-width: 75%;
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  transition: transform 0.1s ease;
+}
+
+.bubble:hover {
+  transform: scale(1.02);
+}
+
+.me {
+  align-self: flex-end;
+  background: var(--accent);
+  color: #fff;
+}
+
+.other {
+  align-self: flex-start;
+  background: #4f545c;
+  color: #fff;
+}
+
+.bubble strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Message input */
+#msgForm {
+  display: flex;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-panel);
+  align-items: center;
+  gap: 10px;
+}
+
+#msgInput {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: none;
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+}
+
+#msgInput::placeholder {
+  color: var(--text-secondary);
+}
+
+#msgForm button {
+  padding: 10px 16px;
+  background: var(--accent);
+  color: white;
+  border-radius: 999px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+#msgForm button:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+#attachBtn {
+  background: #4f545c;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-size: 18px;
+  transition: background 0.2s ease;
+}
+
+#attachBtn:hover {
+  background: #5a5c63;
+}
+
+  </style>
+</head>
+
+<body>
+
+  <!-- AUTH SCREEN -->
+  <div class="auth-container" id="authBox">
+    <h2>Login</h2>
+    <input id="authUsername" placeholder="Username" />
+    <input id="authPassword" type="password" placeholder="Password" />
+    <button id="authBtn">Login</button>
+    <div class="auth-switch" id="switchAuth">
+      Don't have an account? Register
+    </div>
+  </div>
+
+  <!-- CHAT UI -->
+  <div class="container" id="chatUI">
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-header">Direct Messages</div>
+
+      <div class="room-input">
+        <input id="room" placeholder="Room ID (global)" value="global" />
+        <button onclick="joinRoom()">Join Room</button>
+      </div>
+
+      <ul id="userList"></ul>
+    </div>
+
+    <!-- CHAT PANEL -->
+    <div class="chat-panel">
+      <div class="chat-header" id="roomName">select-a-room</div>
+
+      <!-- Call controls -->
+      <div class="call-controls">
+        <button id="startCallBtn">Start Call</button>
+        <button id="endCallBtn" style="display:none;">End Call</button>
+      </div>
+
+      <!-- Video area -->
+      <div id="videoArea">
+        <video id="localVideo" autoplay muted playsinline></video>
+        <video id="remoteVideo" autoplay playsinline></video>
+      </div>
+
+      <div id="messages"></div>
+
+      <form id="msgForm" style="display:none;">
+        <button type="button" id="attachBtn">📎</button>
+        <input id="msgInput" placeholder="Message #room..." />
+        <button>Send</button>
+        <input type="file" id="fileInput" style="display:none;" />
+      </form>
+    </div>
+  </div>
+
+<script>
+let ws;
+let token = null;
+let currentUser = null;
+
+/* WebRTC state */
+let pc = null;
+let localStream = null;
+const rtcConfig = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+};
+
+/* ---------------- AUTH LOGIC ---------------- */
+
+let isLogin = true;
+
+document.getElementById("switchAuth").onclick = () => {
+  isLogin = !isLogin;
+  document.querySelector("#authBox h2").innerText = isLogin ? "Login" : "Register";
+  document.getElementById("authBtn").innerText = isLogin ? "Login" : "Register";
+  document.getElementById("switchAuth").innerText =
+    isLogin ? "Don't have an account? Register" : "Already have an account? Login";
+};
+
+document.getElementById("authBtn").onclick = async () => {
+  const username = document.getElementById("authUsername").value.trim();
+  const password = document.getElementById("authPassword").value.trim();
+
+  if (!username || !password) return alert("Fill all fields");
+
+  const endpoint = isLogin ? "/auth/login" : "/auth/register";
+
+  const res = await fetch(endpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password })
+  });
+
+  const data = await res.json();
+  if (data.error) return alert(data.error);
+
+  token = data.token;
+  currentUser = data.user.username;
+  localStorage.setItem("token", token);
+
+  document.getElementById("authBox").style.display = "none";
+  document.getElementById("chatUI").style.display = "flex";
+};
+
+/* ---------------- CHAT LOGIC ---------------- */
+
+function appendMessage(user, text, messageType = "text", extra = {}) {
+  const msgBox = document.getElementById("messages");
+  const bubble = document.createElement("div");
+
+  bubble.className = "bubble " + (user === currentUser ? "me" : "other");
+
+  if (messageType === "file" && extra.fileUrl) {
+    bubble.innerHTML = `
+      <strong>${user}</strong>
+      <a href="${extra.fileUrl}" target="_blank">
+        📎 ${extra.fileName || "Download file"}
+      </a>
+    `;
+  } else {
+    bubble.innerHTML = `<strong>${user}</strong>${text ? "<br>" + text : ""}`;
+  }
+
+  msgBox.appendChild(bubble);
+  msgBox.scrollTop = msgBox.scrollHeight;
+}
+
+function updateUsers(users) {
+  const ul = document.getElementById("userList");
+  ul.innerHTML = "";
+  users.forEach(u => {
+    const li = document.createElement("li");
+    li.textContent = u;
+    ul.appendChild(li);
+  });
+}
+
+function joinRoom() {
+  const room = document.getElementById("room").value.trim() || "global";
+  startWS(room);
+}
+
+async function startWS(room) {
+  if (!token) return alert("You must login first");
+
+  // Load chat history
+  fetch(`/history?room=${room}`)
+    .then(res => res.json())
+    .then(list => {
+      document.getElementById("messages").innerHTML = "";
+      list.forEach(m => {
+        appendMessage(m.user, m.text, m.messageType, m);
+      });
+    });
+
+  if (ws) ws.close();
+
+  const protocol = location.protocol === "https:" ? "wss" : "ws";
+  ws = new WebSocket(`${protocol}://${location.host}/?token=${token}&room=${room}`);
+
+  document.getElementById("msgForm").style.display = "flex";
+  document.getElementById("roomName").innerText = room;
+  document.getElementById("msgInput").placeholder = `Message #${room}...`;
+
+  ws.onmessage = ev => {
+    const msg = JSON.parse(ev.data);
+
+    if (msg.type === "message") {
+      appendMessage(msg.user, msg.text, msg.messageType, msg);
+    } else if (msg.type === "presence") {
+      updateUsers(msg.users);
+    } else if (msg.type === "webrtc-offer") {
+      handleOffer(msg);
+    } else if (msg.type === "webrtc-answer") {
+      handleAnswer(msg);
+    } else if (msg.type === "webrtc-ice") {
+      handleIce(msg);
+    } else if (msg.type === "error") {
+      alert(msg.message);
+    }
+  };
+
+  document.getElementById("msgForm").onsubmit = e => {
+    e.preventDefault();
+    const text = document.getElementById("msgInput").value.trim();
+    if (!text) return;
+    ws.send(JSON.stringify({ type: "message", text }));
+    document.getElementById("msgInput").value = "";
+  };
+}
+
+/* ---------------- FILE UPLOAD ---------------- */
+
+const fileInput = document.getElementById("fileInput");
+const attachBtn = document.getElementById("attachBtn");
+
+attachBtn.onclick = () => fileInput.click();
+
+fileInput.onchange = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const room = document.getElementById("room").value.trim() || "global";
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("room", room);
+
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("You must be logged in");
+    return;
+  }
+
+  const res = await fetch("/upload", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${token}` },
+    body: formData
+  });
+
+  const data = await res.json();
+  if (data.error) {
+    alert(data.error);
+  }
+
+  fileInput.value = "";
+};
+
+/* ---------------- WEBRTC CALL LOGIC ---------------- */
+
+const startCallBtn = document.getElementById("startCallBtn");
+const endCallBtn = document.getElementById("endCallBtn");
+const localVideo = document.getElementById("localVideo");
+const remoteVideo = document.getElementById("remoteVideo");
+
+startCallBtn.onclick = () => {
+  const room = document.getElementById("room").value.trim() || "global";
+  startCall(room);
+};
+
+endCallBtn.onclick = () => {
+  endCall();
+};
+
+async function createPeerConnection(room) {
+  pc = new RTCPeerConnection(rtcConfig);
+
+  pc.onicecandidate = (e) => {
+    if (e.candidate) {
+      ws.send(JSON.stringify({
+        type: "webrtc-ice",
+        candidate: e.candidate,
+        room
+      }));
+    }
+  };
+
+  pc.ontrack = (e) => {
+    remoteVideo.srcObject = e.streams[0];
+  };
+}
+
+async function startCall(room) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    alert("WebSocket not connected");
+    return;
+  }
+
+  await createPeerConnection(room);
+
+  localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  localVideo.srcObject = localStream;
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  ws.send(JSON.stringify({
+    type: "webrtc-offer",
+    offer,
+    room
+  }));
+
+  startCallBtn.style.display = "none";
+  endCallBtn.style.display = "inline-block";
+}
+
+async function handleOffer(msg) {
+  const room = msg.room;
+  if (!pc) {
+    await createPeerConnection(room);
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    localVideo.srcObject = localStream;
+    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+  }
+
+  await pc.setRemoteDescription(new RTCSessionDescription(msg.offer));
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+
+  ws.send(JSON.stringify({
+    type: "webrtc-answer",
+    answer,
+    room
+  }));
+
+  startCallBtn.style.display = "none";
+  endCallBtn.style.display = "inline-block";
+}
+
+async function handleAnswer(msg) {
+  if (!pc) return;
+  await pc.setRemoteDescription(new RTCSessionDescription(msg.answer));
+}
+
+function handleIce(msg) {
+  if (!pc) return;
+  if (msg.candidate) {
+    pc.addIceCandidate(new RTCIceCandidate(msg.candidate));
+  }
+}
+
+function endCall() {
+  if (pc) {
+    pc.close();
+    pc = null;
+  }
+  if (localStream) {
+    localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
+  }
+  localVideo.srcObject = null;
+  remoteVideo.srcObject = null;
+  startCallBtn.style.display = "inline-block";
+  endCallBtn.style.display = "none";
+}
+</script>
+
+</body>
+</html>
